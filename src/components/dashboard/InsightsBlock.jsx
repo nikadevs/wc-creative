@@ -15,7 +15,7 @@ function Spend({ own, ownBrandSet }) {
   if (!ownBrandSet) {
     return (
       <p className="text-body text-ink-soft">
-        Tell Swipefile which brand is yours to see your own numbers here. <LineLink to="/setup">Setup</LineLink>
+        Tell WC Creative which brand is yours to see your own numbers here. <LineLink to="/setup">Setup</LineLink>
       </p>
     );
   }

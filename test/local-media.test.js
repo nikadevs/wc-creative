@@ -166,3 +166,64 @@ describe('media server', () => {
     }
   });
 });
+
+describe('save-capture', () => {
+  const env = envFrom({ VITE_DB_URL: SB, VITE_DB_ANON_KEY: 'anon' });
+  const query = new URLSearchParams({ v: '1', src: 'extension', id: '1234567890', brand: 'Brand', title: 'Hook', text: 'Body', link: 'https://shop.example/p', started: '2026-01-05', active: '1', kind: 'video', media: 'https://scontent.xx.fbcdn.net/v/a.mp4' }).toString();
+
+  it('saves a new ad with default fields and copies its video', async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), 'media-'));
+    let inserted = null;
+    const fetchFn = async (url, init = {}) => {
+      const u = String(url);
+      if (u === `${SB}/auth/v1/user`) return new Response(JSON.stringify({ id: UID, email: 'r@example.com' }), { status: 200 });
+      if (u.includes('metrics->>ad_library_id=eq.1234567890')) return new Response('[]', { status: 200 });
+      if (u.startsWith(`${SB}/rest/v1/ads?select=id`) && init.method === 'POST') {
+        inserted = JSON.parse(init.body);
+        return new Response(JSON.stringify([{ id: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee' }]), { status: 201 });
+      }
+      if (u.includes('&select=id,media_path')) return new Response(JSON.stringify([{ id: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', media_path: null }]), { status: 200 });
+      if (u.includes('media_path=is.null')) return new Response(JSON.stringify([{ id: 'x' }]), { status: 200 });
+      if (u.startsWith('https://scontent.xx.fbcdn.net/')) return new Response(new Uint8Array([1, 2]), { status: 200, headers: { 'content-type': 'video/mp4', 'content-length': '2' } });
+      return new Response('{}', { status: 404 });
+    };
+    try {
+      const res = await handle(
+        new Request('http://localhost/api/media/save-capture', {
+          method: 'POST',
+          headers: { Authorization: 'Bearer t', 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query }),
+        }),
+        { dir, env, fetch: fetchFn }
+      );
+      const body = await res.json();
+      expect(res.status).toBe(200);
+      expect(body.duplicate).toBe(false);
+      expect(body.media.ok).toBe(true);
+      expect(inserted.brand).toBe('Brand');
+      expect(inserted.format).toBe('video');
+      expect(inserted.added_by).toBe(UID);
+      expect(inserted.metrics.ad_library_id).toBe('1234567890');
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('reports a duplicate without saving again', async () => {
+    const fetchFn = async (url) => {
+      const u = String(url);
+      if (u === `${SB}/auth/v1/user`) return new Response(JSON.stringify({ id: UID }), { status: 200 });
+      if (u.includes('metrics->>ad_library_id=eq.1234567890')) return new Response(JSON.stringify([{ id: 'old' }]), { status: 200 });
+      throw new Error('should not be called: ' + u);
+    };
+    const res = await handle(
+      new Request('http://localhost/api/media/save-capture', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer t', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query }),
+      }),
+      { dir: tmpdir(), env, fetch: fetchFn }
+    );
+    expect(await res.json()).toMatchObject({ ok: true, duplicate: true, id: 'old' });
+  });
+});

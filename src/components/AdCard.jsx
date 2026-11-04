@@ -34,19 +34,61 @@ export function daysLive(ad, now = new Date()) {
   return m.days_running !== null && m.days_running !== '' && Number.isFinite(stored) ? stored : null;
 }
 
+// Mounts its children only while the card is within about two screens of the
+// viewport. Off screen it keeps an empty block of the last measured height,
+// so the page does not jump when a video is unloaded.
+const NEAR_MARGIN = '2000px 0px';
+
+function useNear(ref) {
+  const [near, setNear] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver !== 'function') {
+      setNear(true);
+      return undefined;
+    }
+    const io = new IntersectionObserver((entries) => setNear(entries[0].isIntersecting), { rootMargin: NEAR_MARGIN });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [ref]);
+  return near;
+}
+
 function Creative({ ad }) {
-  const url = useMediaUrl(ad.media_path);
+  const box = useRef(null);
+  const near = useNear(box);
+  const [height, setHeight] = useState(null);
+  const url = useMediaUrl(near ? ad.media_path : null);
   const video = useRef(null);
   const [playing, setPlaying] = useState(false);
   const isVideo = ad.format === 'video';
 
+  // Remember the height while mounted, for the placeholder when it is not.
+  useEffect(() => {
+    const el = box.current;
+    if (!el || !near || typeof ResizeObserver !== 'function') return undefined;
+    const ro = new ResizeObserver(() => {
+      const h = el.getBoundingClientRect().height;
+      if (h > 0) setHeight(h);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [near]);
+
   if (!ad.media_path) {
     return <div className="w-full aspect-square bg-canvas flex items-center justify-center text-small text-ink-soft">No creative saved</div>;
   }
-  if (!url) return <div className="w-full aspect-[4/5] bg-canvas animate-pulse" />;
+
+  if (!near || !url) {
+    return <div ref={box} className={`w-full bg-canvas ${height ? '' : 'aspect-[4/5]'}`} style={height ? { height } : undefined} />;
+  }
 
   if (!isVideo) {
-    return <img src={url} alt="" loading="lazy" className="w-full h-auto max-h-[75vh] object-contain bg-canvas" />;
+    return (
+      <div ref={box}>
+        <img src={url} alt="" loading="lazy" className="w-full h-auto max-h-[75vh] object-contain bg-canvas" />
+      </div>
+    );
   }
 
   const toggle = (e) => {
@@ -62,7 +104,7 @@ function Creative({ ad }) {
   };
 
   return (
-    <div className="relative w-full bg-[#000] cursor-pointer" onClick={toggle}>
+    <div ref={box} className="relative w-full bg-[#000] cursor-pointer" onClick={toggle}>
       {/* #t=0.1 makes the browser show the first frame as the poster. */}
       <video
         ref={video}

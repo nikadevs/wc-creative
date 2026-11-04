@@ -9,11 +9,11 @@ describe('manifest.json', () => {
     expect(manifest.version).toBe(JSON.parse(read('package.json')).version);
   });
 
-  it('is Manifest V3 with only the storage permission and one content script', () => {
+  it('is Manifest V3 with only the storage permission, our two hosts and one content script', () => {
     expect(manifest.manifest_version).toBe(3);
     expect(manifest.permissions).toEqual(['storage']);
-    expect(manifest.host_permissions).toBeUndefined();
-    expect(manifest.background).toBeUndefined();
+    expect(manifest.host_permissions).toEqual(['https://creative.woodencrew.com/*', 'https://*.supabase.co/*']);
+    expect(manifest.background).toEqual({ service_worker: 'background.js' });
     expect(manifest.content_scripts).toEqual([
       {
         matches: ['https://www.facebook.com/ads/library*'],
@@ -26,7 +26,7 @@ describe('manifest.json', () => {
   });
 
   it('every file it names exists, icons are PNGs of the right size', () => {
-    const files = [...manifest.content_scripts[0].js, ...manifest.content_scripts[0].css, manifest.options_ui.page];
+    const files = [...manifest.content_scripts[0].js, ...manifest.content_scripts[0].css, manifest.options_ui.page, manifest.background.service_worker];
     for (const f of files) expect(existsSync(`${ROOT}extension/${f}`)).toBe(true);
     for (const [size, path] of Object.entries(manifest.icons)) {
       const png = readFileSync(`${ROOT}extension/${path}`);
@@ -37,12 +37,22 @@ describe('manifest.json', () => {
   });
 });
 
-describe('content.js sends nothing anywhere', () => {
+describe('content.js sends nothing anywhere itself', () => {
   const src = read('extension/content.js');
-  it('has no network, cookie or messaging calls', () => {
-    for (const banned of ['fetch(', 'XMLHttpRequest', 'document.cookie', 'sendBeacon', 'WebSocket', 'chrome.runtime.sendMessage', 'importScripts']) {
+  it('has no network or cookie calls: only the background worker talks to the network', () => {
+    for (const banned of ['fetch(', 'XMLHttpRequest', 'document.cookie', 'sendBeacon', 'WebSocket', 'importScripts']) {
       expect(src.includes(banned)).toBe(false);
     }
+  });
+});
+
+describe('background.js talks only to the swipefile and its Supabase auth', () => {
+  const src = read('extension/background.js');
+  it('fetches only app and Supabase auth addresses', () => {
+    const calls = src.match(/fetch\(([^,)]+)/g) || [];
+    expect(calls.length).toBeGreaterThan(0);
+    for (const c of calls) expect(c).toMatch(/fetch\((app|cfg\.url) \+/);
+    expect(src.includes('document.cookie')).toBe(false);
   });
 });
 

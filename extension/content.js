@@ -1,9 +1,10 @@
-// Content script: puts a "Save to swipefile" button on every ad card in the
-// Meta Ad Library. A click reads that one card (extension/parse.js) and opens
-// your own swipefile's capture page with it in a new tab.
+// Content script: puts a "Save" button on every ad card in the Meta Ad
+// Library. A click reads that one card (extension/parse.js) and hands it to
+// the extension's background worker, which saves it to your own swipefile in
+// one step (default fields, creative copied). The button says how it went.
 //
-// It never reads cookies, never calls fetch and never sends anything anywhere:
-// the only thing that leaves the page is the capture URL you open yourself.
+// It never reads cookies and never calls fetch itself: only the background
+// worker talks to your swipefile.
 //
 // Speed: the Ad Library keeps every loaded ad in the page, so a full scan gets
 // slower with every scroll (about 300 ms at 150 ads). The page is scanned in
@@ -14,10 +15,10 @@
   'use strict';
 
   var P = globalThis.SwipefileParse;
-  var LABEL = 'Save to swipefile';
+  var LABEL = 'Add to Creative WC';
+  var TEXT = { saving: 'Saving...', saved: 'Saved', dup: 'Already saved', signin: 'Sign in to save', failed: 'Not saved, retry' };
   var DEFAULT_APP = 'https://creative.woodencrew.com';
-  var NO_ADDRESS = 'Set your swipefile address first: open the extension options.';
-  var ID_RE = /Library ID:?\s*(\d{6,20})/g;
+    var ID_RE = /Library ID:?\s*(\d{6,20})/g;
   var MARGIN = '1500px 0px';
 
   function readAppUrl(done) {
@@ -96,20 +97,53 @@
 
   // ---- buttons ---------------------------------------------------------------
 
+  function setState(button, label, state) {
+    button.textContent = label;
+    button.setAttribute('data-state', state);
+  }
+
   function onClick(e) {
     e.preventDefault();
     e.stopPropagation();
-    var card = e.currentTarget.parentNode;
+    var button = e.currentTarget;
+    var state = button.getAttribute('data-state');
+    if (state === 'saving' || state === 'saved' || state === 'dup') return;
+    if (state === 'signin') {
+      chrome.runtime.sendMessage({ type: 'openOptions' });
+      return;
+    }
+    var card = button.parentNode;
     // The parser reads the video address: put back any we unloaded.
     var vids = card.querySelectorAll('video');
     for (var i = 0; i < vids.length; i++) reload(vids[i]);
     readAppUrl(function (appUrl) {
-      if (!appUrl) {
-        window.alert(NO_ADDRESS);
-        return;
-      }
       var capture = P.parseCard(P.readCard(card));
-      window.open(P.captureUrl(appUrl, capture, 'extension'), '_blank', 'noopener');
+      var url = P.captureUrl(appUrl, capture, 'extension');
+      var q = url.indexOf('?');
+      setState(button, TEXT.saving, 'saving');
+      try {
+        chrome.runtime.sendMessage({ type: 'save', query: q < 0 ? '' : url.slice(q + 1) }, function (res) {
+          if (chrome.runtime.lastError || !res) {
+            setState(button, TEXT.failed, 'failed');
+            button.title = (chrome.runtime.lastError && chrome.runtime.lastError.message) || 'No answer';
+            return;
+          }
+          if (res.ok) {
+            setState(button, res.duplicate ? TEXT.dup : TEXT.saved, res.duplicate ? 'dup' : 'saved');
+            button.title = res.media && !res.media.ok && !res.duplicate ? 'Saved, but the video was not copied.' : '';
+            return;
+          }
+          if (res.code === 'signed_out') {
+            setState(button, TEXT.signin, 'signin');
+            return;
+          }
+          setState(button, TEXT.failed, 'failed');
+          button.title = res.message || '';
+        });
+      } catch (err) {
+        setState(button, TEXT.failed, 'failed');
+        button.title = 'Reload the page: the extension was updated.';
+      }
     });
   }
 
@@ -128,7 +162,8 @@
     button.setAttribute('data-swipefile-btn', '');
     button.textContent = LABEL;
     button.addEventListener('click', onClick);
-    card.insertBefore(button, card.firstChild);
+    // Under the ad, on the right.
+    card.appendChild(button);
   }
 
   // The card around an element that holds exactly one Library ID: climb while
