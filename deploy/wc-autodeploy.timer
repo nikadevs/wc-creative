@@ -1,0 +1,9 @@
+[Unit]
+Description=WC Creative: check GitHub for new commits every minute
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=1min
+
+[Install]
+WantedBy=timers.target

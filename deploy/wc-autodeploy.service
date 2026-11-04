@@ -1,0 +1,6 @@
+[Unit]
+Description=WC Creative: deploy new commits from GitHub
+
+[Service]
+Type=oneshot
+ExecStart=/opt/wc-creative/app/deploy/autodeploy.sh
