@@ -28,42 +28,6 @@ export function isRunning(ad) {
 // freeze at the day it was saved.
 export function daysLive(ad, now = new Date()) {
   const m = ad?.metrics || {};
-  const [product, setProduct] = useState(productOf(ad) || '');
-  const propProduct = productOf(ad) || '';
-  useEffect(() => setProduct(propProduct), [propProduct]);
-  const changeProduct = async (e) => {
-    e.stopPropagation();
-    const next = e.target.value;
-    const before = product;
-    setProduct(next);
-    const updated = await setAdProduct(ad, next || null, (products || []).map((p) => p.name));
-    if (!updated) {
-      setProduct(before);
-      setError('Could not change the product.');
-      return;
-    }
-    onAdChange?.(updated);
-  };
-  const productRow = products && (
-    <div className={`${selectable ? 'pl-11' : 'px-3'} pb-2`}>
-      <select
-        value={product}
-        onChange={changeProduct}
-        onClick={(e) => e.stopPropagation()}
-        aria-label="Product"
-        className="w-full h-8 rounded-lg bg-canvas border border-line px-2 text-meta text-ink cursor-pointer"
-      >
-        <option value="">No product</option>
-        {products.map((p) => (
-          <option key={p.id} value={p.name}>
-            {p.name}
-          </option>
-        ))}
-        {product && !products.some((p) => p.name === product) && <option value={product}>{product}</option>}
-      </select>
-    </div>
-  );
-
   const running = isRunning(ad);
   const fromDates = daysRunning(m.started_running || null, running ? null : m.stopped_running || null, now);
   if (fromDates !== null) return fromDates;
