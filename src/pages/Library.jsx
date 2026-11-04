@@ -9,6 +9,7 @@ import { loadPage, loadFacets, invalidateLocalCache, computeFacets, PAGE_SIZE, L
 import { saveListContext } from '@/lib/library/listContext';
 import { MAX_SELECT } from '@/lib/library/bulk';
 import AdCard from '@/components/AdCard';
+import { useProducts } from '@/lib/products';
 import { CardSkeleton } from '@/components/Skeleton';
 import {
   Page,
@@ -62,6 +63,7 @@ export default function Library() {
   const navigate = useNavigate();
   const location = useLocation();
   const filters = useMemo(() => filtersFromParams(params), [params]);
+  const products = useProducts();
   const filtersRef = useRef(filters);
   filtersRef.current = filters;
   const key = paramsFromFilters(filters).toString();
@@ -388,6 +390,7 @@ export default function Library() {
           never scroll out of reach. */}
       <Toolbar
         sticky
+        searchClassName="lg:w-80 xl:w-96 lg:flex-none lg:mr-auto"
         search={
           <SearchField
             inputRef={searchRef}
@@ -399,7 +402,15 @@ export default function Library() {
           />
         }
       >
-        <Segmented label="Whose ads" options={WHO} value={filters.who} onChange={(id) => change('who', id)} className="flex-shrink-0" />
+        {/* Our products: the product is also a tag, so this is the tag filter. */}
+        <select value={filters.tag} onChange={(e) => change('tag', e.target.value)} aria-label="Filter by product" className={`${sortCls} flex-shrink-0`}>
+          <option value="">All products</option>
+          {products.map((p) => (
+            <option key={p.id} value={p.name}>
+              {p.name}
+            </option>
+          ))}
+        </select>
         <Chip
           pressed={filters.starred}
           onClick={() => change('starred', !filters.starred)}
@@ -574,6 +585,7 @@ export default function Library() {
                   invalidateLocalCache();
                   setFacetsKey((n) => n + 1);
                 }}
+                products={products}
                 onAdDeleted={(gone) => {
                   setRows((cur) => cur.filter((a) => a.id !== gone.id));
                   invalidateLocalCache();

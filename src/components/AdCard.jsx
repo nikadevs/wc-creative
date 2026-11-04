@@ -4,6 +4,7 @@ import { setStarred, isStarred } from '@/lib/ads';
 import { useMediaUrl } from '@/lib/media';
 import { daysRunning } from '@/features/capture/dates';
 import { bulkDelete } from '@/lib/library/bulk';
+import { productOf, setAdProduct } from '@/lib/products';
 
 // Permalink to THIS ad, never to the advertiser page. The importer writes
 // metrics.ad_permalink; older rows only have metrics.source_url. If neither is
@@ -27,6 +28,42 @@ export function isRunning(ad) {
 // freeze at the day it was saved.
 export function daysLive(ad, now = new Date()) {
   const m = ad?.metrics || {};
+  const [product, setProduct] = useState(productOf(ad) || '');
+  const propProduct = productOf(ad) || '';
+  useEffect(() => setProduct(propProduct), [propProduct]);
+  const changeProduct = async (e) => {
+    e.stopPropagation();
+    const next = e.target.value;
+    const before = product;
+    setProduct(next);
+    const updated = await setAdProduct(ad, next || null, (products || []).map((p) => p.name));
+    if (!updated) {
+      setProduct(before);
+      setError('Could not change the product.');
+      return;
+    }
+    onAdChange?.(updated);
+  };
+  const productRow = products && (
+    <div className={`${selectable ? 'pl-11' : 'px-3'} pb-2`}>
+      <select
+        value={product}
+        onChange={changeProduct}
+        onClick={(e) => e.stopPropagation()}
+        aria-label="Product"
+        className="w-full h-8 rounded-lg bg-canvas border border-line px-2 text-meta text-ink cursor-pointer"
+      >
+        <option value="">No product</option>
+        {products.map((p) => (
+          <option key={p.id} value={p.name}>
+            {p.name}
+          </option>
+        ))}
+        {product && !products.some((p) => p.name === product) && <option value={product}>{product}</option>}
+      </select>
+    </div>
+  );
+
   const running = isRunning(ad);
   const fromDates = daysRunning(m.started_running || null, running ? null : m.stopped_running || null, now);
   if (fromDates !== null) return fromDates;
@@ -135,7 +172,7 @@ function Creative({ ad }) {
 // `selectable` is set the whole card toggles selection instead.
 // `onAdChange` hears about a star toggled on the card, `onAdDeleted` about a
 // delete, so a list can keep its rows in step.
-export default function AdCard({ ad, selectable = false, selected = false, onToggleSelect, focused = false, onAdChange, onAdDeleted }) {
+export default function AdCard({ ad, selectable = false, selected = false, onToggleSelect, focused = false, onAdChange, onAdDeleted, products = null }) {
   const [starred, setStar] = useState(isStarred(ad));
   const propStarred = isStarred(ad);
   useEffect(() => setStar(propStarred), [propStarred]);
@@ -181,6 +218,42 @@ export default function AdCard({ ad, selectable = false, selected = false, onTog
     }
     onAdDeleted?.(ad);
   };
+
+  const [product, setProduct] = useState(productOf(ad) || '');
+  const propProduct = productOf(ad) || '';
+  useEffect(() => setProduct(propProduct), [propProduct]);
+  const changeProduct = async (e) => {
+    e.stopPropagation();
+    const next = e.target.value;
+    const before = product;
+    setProduct(next);
+    const updated = await setAdProduct(ad, next || null, (products || []).map((p) => p.name));
+    if (!updated) {
+      setProduct(before);
+      setError('Could not change the product.');
+      return;
+    }
+    onAdChange?.(updated);
+  };
+  const productRow = products && (
+    <div className={`${selectable ? 'pl-11' : 'px-3'} pb-2`}>
+      <select
+        value={product}
+        onChange={changeProduct}
+        onClick={(e) => e.stopPropagation()}
+        aria-label="Product"
+        className="w-full h-8 rounded-lg bg-canvas border border-line px-2 text-meta text-ink cursor-pointer"
+      >
+        <option value="">No product</option>
+        {products.map((p) => (
+          <option key={p.id} value={p.name}>
+            {p.name}
+          </option>
+        ))}
+        {product && !products.some((p) => p.name === product) && <option value={product}>{product}</option>}
+      </select>
+    </div>
+  );
 
   const running = isRunning(ad);
   const days = daysLive(ad);
@@ -259,6 +332,7 @@ export default function AdCard({ ad, selectable = false, selected = false, onTog
       >
         {selectMark}
         {bar}
+        {productRow}
         <Creative ad={ad} />
       </div>
     );
@@ -267,6 +341,7 @@ export default function AdCard({ ad, selectable = false, selected = false, onTog
   return (
     <div data-ad-id={ad.id} className={shell}>
       {bar}
+      {productRow}
       {error && <p className="px-4 pb-2 text-small text-status-bad-text">{error}</p>}
       <Creative ad={ad} />
     </div>

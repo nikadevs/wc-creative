@@ -7,10 +7,10 @@ import { MagnifyingGlass } from '@phosphor-icons/react';
 // sideways and never wraps. `sticky` pins that second row to the top of the
 // scroller under lg (the root uses display: contents there, so the sticky row
 // belongs to the page, not to this short wrapper).
-export function Toolbar({ search, children, sticky = false, className = '' }) {
+export function Toolbar({ search, children, sticky = false, className = '', searchClassName = 'lg:flex-1' }) {
   return (
     <div className={`${sticky ? 'contents' : 'flex flex-col gap-3'} lg:flex lg:flex-row lg:items-center lg:gap-3 mb-4 lg:mb-6 ${className}`}>
-      {search && <div className={`min-w-0 lg:flex-1 ${sticky ? 'block mb-3 lg:mb-0' : ''}`}>{search}</div>}
+      {search && <div className={`min-w-0 ${searchClassName} ${sticky ? 'block mb-3 lg:mb-0' : ''}`}>{search}</div>}
       {children && (
         <div
           className={`scroll-x flex items-center gap-2 min-w-0 lg:!overflow-visible lg:flex-shrink-0 ${

@@ -190,13 +190,11 @@ export async function handle(req, deps) {
 const clean = (v) => (typeof v === 'string' && v.trim() ? v.trim() : null);
 
 // The row saveAd writes for a capture saved with the default form.
-// The products a saved ad can be filed under (the extension's choice).
-export const PRODUCTS = ['Neck Pillow', 'Air Cushion Back', 'Anti Theft Bag', 'GPS Wallet Tracker'];
-
 export function rowFromCapture(capture, user, now = new Date(), product = '') {
   const f = adFromCapture(capture, formFromCapture(capture), { now });
   const tags = Array.isArray(f.tags) ? f.tags : String(f.tags || '').split(',').map((t) => t.trim()).filter(Boolean);
-  const wcProduct = PRODUCTS.includes(product) ? product : null;
+  // product is already checked against the products table by the caller.
+  const wcProduct = typeof product === 'string' && product.trim() ? product.trim() : null;
   if (wcProduct && !tags.includes(wcProduct)) tags.push(wcProduct);
   return {
     brand: clean(f.brand),
@@ -233,9 +231,17 @@ async function saveCapture(req, { dir, env, realFetch }) {
     path: `/rest/v1/ads?select=id,media_path&metrics->>ad_library_id=eq.${capture.libraryId}&limit=1`,
   });
   if (!found.ok) return fail(502, 'upstream', 'Could not check for a duplicate.');
+  // A saved ad is a seen ad (ad_views), for everyone.
+  await rest({ fetch: realFetch, env, token, path: '/rest/v1/ad_views', method: 'POST', body: { library_id: capture.libraryId }, prefer: 'resolution=ignore-duplicates' }).catch(() => null);
   if (Array.isArray(found.data) && found.data[0]) return json(200, { ok: true, duplicate: true, id: found.data[0].id });
 
-  const row = rowFromCapture(capture, who.user, new Date(), String(parsed.body.product || ''));
+  // The product must be one of ours (the products table); anything else is dropped.
+  let product = String(parsed.body.product || '').trim();
+  if (product) {
+    const p = await rest({ fetch: realFetch, env, token, path: `/rest/v1/products?select=name&name=eq.${encodeURIComponent(product)}&limit=1` });
+    if (!p.ok || !Array.isArray(p.data) || !p.data[0]) product = '';
+  }
+  const row = rowFromCapture(capture, who.user, new Date(), product);
   const made = await rest({ fetch: realFetch, env, token, path: '/rest/v1/ads?select=id', method: 'POST', body: row, prefer: 'return=representation' });
   const ad = Array.isArray(made.data) ? made.data[0] : null;
   if (!made.ok || !ad) return fail(502, 'upstream', 'Could not save the ad.');
