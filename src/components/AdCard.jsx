@@ -187,7 +187,7 @@ export default function AdCard({ ad, selectable = false, selected = false, onTog
   const permalink = adPermalink(ad);
 
   const bar = (
-    <div className={`flex items-center gap-2 min-h-[44px] whitespace-nowrap ${selectable ? 'pl-12 pr-1' : 'pl-4 pr-1'} text-meta`}>
+    <div className={`flex items-center gap-1 min-h-[40px] whitespace-nowrap ${selectable ? 'pl-11 pr-1' : 'pl-3 pr-1'} text-meta`}>
       <span
         role="img"
         aria-label={running ? 'Running' : 'Ended'}
@@ -204,9 +204,9 @@ export default function AdCard({ ad, selectable = false, selected = false, onTog
           onClick={(e) => e.stopPropagation()}
           aria-label="Open Ad"
           title="Open Ad"
-          className="w-11 h-11 flex flex-shrink-0 items-center justify-center rounded-full text-ink-soft hover:text-ink hover:bg-card-hi"
+          className="w-9 h-9 flex flex-shrink-0 items-center justify-center rounded-full text-ink-soft hover:text-ink hover:bg-card-hi"
         >
-          <ArrowSquareOut size={20} weight="bold" />
+          <ArrowSquareOut size={18} weight="bold" />
         </a>
       )}
       <button
@@ -214,9 +214,9 @@ export default function AdCard({ ad, selectable = false, selected = false, onTog
         onClick={toggleStar}
         aria-label={starred ? 'Remove from favorites' : 'Add to favorites'}
         aria-pressed={starred}
-        className={`w-11 h-11 flex flex-shrink-0 items-center justify-center rounded-full hover:bg-card-hi ${starred ? 'text-status-warn' : 'text-ink-soft hover:text-ink'}`}
+        className={`w-9 h-9 flex flex-shrink-0 items-center justify-center rounded-full hover:bg-card-hi ${starred ? 'text-status-warn' : 'text-ink-soft hover:text-ink'}`}
       >
-        <Star size={20} weight={starred ? 'fill' : 'bold'} />
+        <Star size={18} weight={starred ? 'fill' : 'bold'} />
       </button>
       <button
         type="button"
@@ -224,11 +224,11 @@ export default function AdCard({ ad, selectable = false, selected = false, onTog
         disabled={deleting}
         aria-label={confirming ? 'Tap again to delete' : 'Delete ad'}
         title={confirming ? 'Tap again to delete' : 'Delete ad'}
-        className={`h-11 flex flex-shrink-0 items-center justify-center rounded-full ${
-          confirming ? 'px-3 bg-status-bad text-[#fff] font-semibold' : 'w-11 text-ink-soft hover:text-status-bad hover:bg-card-hi'
+        className={`h-9 flex flex-shrink-0 items-center justify-center rounded-full ${
+          confirming ? 'px-2 bg-status-bad text-[#fff] font-semibold' : 'w-9 text-ink-soft hover:text-status-bad hover:bg-card-hi'
         } ${deleting ? 'opacity-50' : ''}`}
       >
-        {confirming ? 'Delete?' : <Trash size={20} weight="bold" />}
+        {confirming ? 'Delete?' : <Trash size={18} weight="bold" />}
       </button>
     </div>
   );

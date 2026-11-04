@@ -7,7 +7,7 @@ export default function Page({ id, width = 'wide', className = '', children, ...
   return (
     <div
       data-page={id}
-      className={`mx-auto w-full max-w-[var(--maxw)] px-[var(--gutter)] pt-6 lg:pt-10 pb-16 ${className}`}
+      className={`mx-auto w-full ${width === 'full' ? 'max-w-none' : 'max-w-[var(--maxw)]'} px-[var(--gutter)] pt-6 lg:pt-10 pb-16 ${className}`}
       {...rest}
     >
       {width === 'narrow' ? <div className="max-w-[720px]">{children}</div> : children}
