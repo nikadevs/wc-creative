@@ -145,12 +145,14 @@ export default function AdCard({ ad, selectable = false, selected = false, onTog
   const permalink = adPermalink(ad);
 
   const bar = (
-    <div className={`flex items-center gap-3 min-h-[48px] ${selectable ? 'pl-12 pr-2' : 'pl-4 pr-1'} text-small`}>
-      <span className="inline-flex items-center gap-1.5 font-semibold text-ink">
-        <span aria-hidden="true" className={`w-2.5 h-2.5 rounded-full ${running ? 'bg-status-good' : 'bg-status-bad'}`} />
-        {running ? 'Running' : 'Ended'}
-      </span>
-      {days !== null && <span className="num text-ink-soft">{days} days</span>}
+    <div className={`flex items-center gap-2 min-h-[44px] whitespace-nowrap ${selectable ? 'pl-12 pr-1' : 'pl-4 pr-1'} text-meta`}>
+      <span
+        role="img"
+        aria-label={running ? 'Running' : 'Ended'}
+        title={running ? 'Running' : 'Ended'}
+        className={`flex-shrink-0 w-2.5 h-2.5 rounded-full ${running ? 'bg-status-good' : 'bg-status-bad'}`}
+      />
+      {days !== null && <span className="num text-meta text-ink-soft">{days}d</span>}
       <span className="flex-1" />
       {permalink && (
         <a
@@ -158,9 +160,11 @@ export default function AdCard({ ad, selectable = false, selected = false, onTog
           target="_blank"
           rel="noopener noreferrer"
           onClick={(e) => e.stopPropagation()}
-          className="inline-flex items-center gap-1 min-h-[44px] px-2 font-semibold text-ink-soft hover:text-ink"
+          aria-label="Open Ad"
+          title="Open Ad"
+          className="w-11 h-11 flex flex-shrink-0 items-center justify-center rounded-full text-ink-soft hover:text-ink hover:bg-card-hi"
         >
-          Open Ad <ArrowSquareOut size={14} weight="bold" />
+          <ArrowSquareOut size={20} weight="bold" />
         </a>
       )}
       <button
@@ -168,7 +172,7 @@ export default function AdCard({ ad, selectable = false, selected = false, onTog
         onClick={toggleStar}
         aria-label={starred ? 'Remove from favorites' : 'Add to favorites'}
         aria-pressed={starred}
-        className={`w-11 h-11 flex items-center justify-center rounded-full hover:bg-card-hi ${starred ? 'text-status-warn' : 'text-ink-soft hover:text-ink'}`}
+        className={`w-11 h-11 flex flex-shrink-0 items-center justify-center rounded-full hover:bg-card-hi ${starred ? 'text-status-warn' : 'text-ink-soft hover:text-ink'}`}
       >
         <Star size={20} weight={starred ? 'fill' : 'bold'} />
       </button>
@@ -178,7 +182,7 @@ export default function AdCard({ ad, selectable = false, selected = false, onTog
         disabled={deleting}
         aria-label={confirming ? 'Tap again to delete' : 'Delete ad'}
         title={confirming ? 'Tap again to delete' : 'Delete ad'}
-        className={`h-11 flex items-center justify-center rounded-full ${
+        className={`h-11 flex flex-shrink-0 items-center justify-center rounded-full ${
           confirming ? 'px-3 bg-status-bad text-[#fff] font-semibold' : 'w-11 text-ink-soft hover:text-status-bad hover:bg-card-hi'
         } ${deleting ? 'opacity-50' : ''}`}
       >
