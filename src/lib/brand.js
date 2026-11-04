@@ -6,7 +6,7 @@ const env = (typeof import.meta !== 'undefined' && import.meta.env) || {};
 
 // The app's name, shown as the wordmark and in titles. Set VITE_APP_NAME to
 // rename your copy.
-export const APP_NAME = (env.VITE_APP_NAME || 'Swipefile').trim() || 'Swipefile';
+export const APP_NAME = (env.VITE_APP_NAME || 'WC Creative').trim() || 'WC Creative';
 
 // Which brand is *yours*. Set VITE_OWN_BRAND in .env (e.g. "acme labs") so the
 // dashboard can split your own ads from competitors'. Comparison is

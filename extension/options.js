@@ -34,7 +34,43 @@
   var status = document.getElementById('status');
 
   chrome.storage.sync.get(['appUrl'], function (items) {
-    if (items && items.appUrl) input.value = items.appUrl;
+    input.value = (items && items.appUrl) || 'https://creative.woodencrew.com';
+  });
+
+  // Account: sign in once, the background worker keeps the session.
+  var signedIn = document.getElementById('signedIn');
+  var signInForm = document.getElementById('signInForm');
+  var who = document.getElementById('who');
+  var authStatus = document.getElementById('authStatus');
+  function showAccount(email) {
+    signedIn.hidden = !email;
+    signInForm.hidden = !!email;
+    who.textContent = email || '';
+  }
+  chrome.runtime.sendMessage({ type: 'status' }, function (res) {
+    showAccount(res && res.email);
+  });
+  signInForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    authStatus.textContent = 'Signing in...';
+    chrome.runtime.sendMessage(
+      { type: 'signIn', email: document.getElementById('email').value, password: document.getElementById('password').value },
+      function (res) {
+        document.getElementById('password').value = '';
+        if (!res || !res.ok) {
+          authStatus.textContent = (res && res.message) || 'Sign in failed.';
+          return;
+        }
+        authStatus.textContent = 'Signed in. Open the Ad Library and press Save on any ad.';
+        showAccount(res.email);
+      }
+    );
+  });
+  document.getElementById('signOut').addEventListener('click', function () {
+    chrome.runtime.sendMessage({ type: 'signOut' }, function () {
+      authStatus.textContent = 'Signed out.';
+      showAccount(null);
+    });
   });
 
   form.addEventListener('submit', function (e) {

@@ -13,7 +13,8 @@
   'use strict';
 
   var ID_SOURCE = 'Library ID:?\\s*(\\d{6,20})';
-  var BUTTON_TEXT = 'Save to swipefile';
+  // Every label our own button can show: never read as ad text.
+  var BUTTON_TEXTS = ['Save to swipefile', 'Add to Creative WC', 'Saving...', 'Saved', 'Already saved', 'Sign in to save', 'Not saved, retry'];
   var TEXT_MAX = 1500;
   var URL_MAX = 6000;
   var MEDIA_MAX = 4;
@@ -138,7 +139,7 @@
       .split(/\n+/)
       .map(trim)
       .filter(function (l) {
-        return l && l !== BUTTON_TEXT;
+        return l && BUTTON_TEXTS.indexOf(l) < 0;
       });
 
     var links = [];

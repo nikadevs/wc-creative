@@ -1,14 +1,14 @@
-/* The Save to swipefile button, and nothing else. `all: revert` first, so
+/* The Add to Creative WC button, and nothing else. `all: revert` first, so
    the host page's styles cannot leak into it. */
 .swipefile-save {
   all: revert;
   box-sizing: border-box;
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
   min-height: 44px;
   min-width: 44px;
-  margin: 0 0 8px;
+  margin: 8px 0 0 auto;
   padding: 0 16px;
   background: #0A0A0A;
   color: #FFFFFF;
@@ -24,4 +24,23 @@
 .swipefile-save:focus-visible {
   outline: 2px solid #FFFFFF;
   outline-offset: 2px;
+}
+.swipefile-save[data-state='saving'] {
+  opacity: 0.7;
+  cursor: progress;
+}
+.swipefile-save[data-state='saved'] {
+  background: #1F7A57;
+  border-color: #1F7A57;
+  cursor: default;
+}
+.swipefile-save[data-state='dup'] {
+  background: #525252;
+  border-color: #525252;
+  cursor: default;
+}
+.swipefile-save[data-state='failed'],
+.swipefile-save[data-state='signin'] {
+  background: #A11F2D;
+  border-color: #A11F2D;
 }

@@ -12,7 +12,7 @@ export default function OwnBrandHint({ brandSet, again = false, className = '' }
   if (again) return <p className={`text-body text-ink-soft ${className}`}>Your own numbers show here once your brand is set.</p>;
   return (
     <p className={`text-body text-ink-soft ${className}`}>
-      Tell Swipefile which brand is yours to see your own numbers here.{' '}
+      Tell WC Creative which brand is yours to see your own numbers here.{' '}
       <Link
         to="/setup"
         className="press inline-flex items-center min-h-[44px] min-w-[44px] -my-3 px-1 text-ink underline underline-offset-4 decoration-ink-soft hover:decoration-ink"

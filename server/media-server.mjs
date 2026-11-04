@@ -10,6 +10,11 @@
 //   DELETE /api/media/object/<path>            remove one of your files
 //   POST   /api/media/functions/fetch-media    the fetch-media edge function,
 //          same handler, but the creative is written to our disk
+//   GET    /api/media/config                   public project URL and anon key
+//          (both already ship in the site's own JavaScript), for the extension
+//   POST   /api/media/save-capture             one click save from the extension:
+//          { query } is the capture link's query string; saves the ad with the
+//          default fields as the signed in user, then copies its creative
 //
 // Env (read from the process, e.g. systemd EnvironmentFile):
 //   SUPABASE_URL or VITE_DB_URL, SUPABASE_ANON_KEY or VITE_DB_ANON_KEY,
@@ -20,7 +25,9 @@ import { mkdir, writeFile, rename, unlink, access } from 'node:fs/promises';
 import path from 'node:path';
 import { randomBytes } from 'node:crypto';
 import { handleRequest as fetchMediaHandler } from '../supabase/functions/fetch-media/handler.js';
-import { getUser, json, fail } from '../supabase/functions/_shared/http.js';
+import { getUser, json, fail, rest, readJson } from '../supabase/functions/_shared/http.js';
+import { parseCaptureParams } from '../src/features/capture/params.js';
+import { adFromCapture, formFromCapture } from '../src/features/capture/capture.js';
 
 export const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
 const SAFE_PATH = /^[A-Za-z0-9][A-Za-z0-9._-]*(\/[A-Za-z0-9][A-Za-z0-9._-]*)*$/;
@@ -138,6 +145,13 @@ export async function handle(req, deps) {
     return fetchMediaHandler(req, { fetch: localStorageFetch({ dir, env, realFetch }), env });
   }
 
+  if (url.pathname === '/api/media/config' && req.method === 'GET') {
+    return json(200, { ok: true, supabaseUrl: env('SUPABASE_URL'), anonKey: env('SUPABASE_ANON_KEY') });
+  }
+  if (url.pathname === '/api/media/save-capture') {
+    return saveCapture(req, { dir, env, realFetch });
+  }
+
   const prefix = '/api/media/object/';
   if (!url.pathname.startsWith(prefix)) return fail(404, 'not_found', 'Unknown route.');
   let rel;
@@ -171,6 +185,73 @@ export async function handle(req, deps) {
     return fail(500, 'write_failed', 'Could not write the file.');
   }
   return json(200, { ok: true, Key: `ad-media/${rel}` });
+}
+
+const clean = (v) => (typeof v === 'string' && v.trim() ? v.trim() : null);
+
+// The row saveAd writes for a capture saved with the default form.
+export function rowFromCapture(capture, user, now = new Date()) {
+  const f = adFromCapture(capture, formFromCapture(capture), { now });
+  const tags = Array.isArray(f.tags) ? f.tags : String(f.tags || '').split(',').map((t) => t.trim()).filter(Boolean);
+  return {
+    brand: clean(f.brand),
+    platform: clean(f.platform) || 'Facebook',
+    format: f.format || 'image',
+    hook: clean(f.hook),
+    ad_copy: clean(f.ad_copy),
+    landing_url: clean(f.landing_url),
+    verdict: f.verdict || 'unsure',
+    status: f.status || 'running',
+    tags,
+    metrics: f.metrics || {},
+    media_path: null,
+    added_by: user.id,
+    added_by_email: user.email || null,
+  };
+}
+
+async function saveCapture(req, { dir, env, realFetch }) {
+  if (req.method !== 'POST') return fail(405, 'method_not_allowed', 'Use POST.');
+  const token = bearerFrom(req);
+  const who = await getUser({ fetch: realFetch, env, token });
+  if (who.response) return who.response;
+  const parsed = await readJson(req, 65536);
+  if (!parsed.ok) return parsed.response;
+  const query = String(parsed.body.query || '').replace(/^\?/, '');
+  const { capture } = parseCaptureParams(new URLSearchParams(query));
+  if (!capture.libraryId) return fail(400, 'bad_request', 'The ad has no Library ID.');
+
+  const found = await rest({
+    fetch: realFetch,
+    env,
+    token,
+    path: `/rest/v1/ads?select=id,media_path&metrics->>ad_library_id=eq.${capture.libraryId}&limit=1`,
+  });
+  if (!found.ok) return fail(502, 'upstream', 'Could not check for a duplicate.');
+  if (Array.isArray(found.data) && found.data[0]) return json(200, { ok: true, duplicate: true, id: found.data[0].id });
+
+  const row = rowFromCapture(capture, who.user);
+  const made = await rest({ fetch: realFetch, env, token, path: '/rest/v1/ads?select=id', method: 'POST', body: row, prefer: 'return=representation' });
+  const ad = Array.isArray(made.data) ? made.data[0] : null;
+  if (!made.ok || !ad) return fail(502, 'upstream', 'Could not save the ad.');
+
+  let media = { ok: false, skipped: 'no_media' };
+  if (capture.media.length) {
+    const res = await fetchMediaHandler(
+      new Request('http://localhost/api/media/functions/fetch-media', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'fetch', adId: ad.id, url: capture.media[0] }),
+      }),
+      { fetch: localStorageFetch({ dir, env, realFetch }), env }
+    );
+    try {
+      media = await res.json();
+    } catch {
+      media = { ok: false };
+    }
+  }
+  return json(200, { ok: true, duplicate: false, id: ad.id, media: { ok: !!media.ok, path: media.path || null } });
 }
 
 function toRequest(nodeReq) {
