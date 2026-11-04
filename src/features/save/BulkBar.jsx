@@ -14,7 +14,7 @@ const VERDICT_ACTIONS = [
 ];
 
 // The delete button turns solid red once armed: the second tap deletes.
-const ARMED = '!bg-red-500 !text-white';
+const ARMED = '!bg-red-500 !text-[#fff]';
 // Quiet buttons in the lg bar run a little tighter so the whole bar is one row
 // at 1440.
 const TIGHT = '!px-3';

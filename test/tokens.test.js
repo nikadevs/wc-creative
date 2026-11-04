@@ -14,9 +14,9 @@ const cssVar = (name) => {
   return m ? m[1].toUpperCase() : null;
 };
 
-const DELTA = { good: '#80E2B9', bad: '#FFADAC', flat: '#8B8B8B' };
-const HEAT = { 0: '#262626', 1: '#4A4A4A', 2: '#6A6A6A', 3: '#8C8C8C', 4: '#AFAFAF', 5: '#D4D4D4' };
-const STATUS = { good: '#36A980', warn: '#C18434', bad: '#C13140', neutral: '#8B8B8B', live: '#F4F4F5' };
+const DELTA = { good: '#16774F', bad: '#A11F2D', flat: '#8B8B8B' };
+const HEAT = { 0: '#E5E5E5', 1: '#C4C4C4', 2: '#A3A3A3', 3: '#838383', 4: '#676767', 5: '#525252' };
+const STATUS = { good: '#36A980', warn: '#C18434', bad: '#C13140', neutral: '#8B8B8B', live: '#171717' };
 
 describe('colour tokens', () => {
   it('delta: good and bad are the status text tints, flat the neutral grey', () => {
@@ -29,7 +29,7 @@ describe('colour tokens', () => {
     expect(colors.delta.flat).toBe(colors.status.neutral);
   });
 
-  it('heat: six greys from the track to the bar grey, getting lighter', () => {
+  it('heat: six greys from the track to the bar grey, getting darker (light theme)', () => {
     expect(Object.keys(colors.heat).map(Number)).toEqual([0, 1, 2, 3, 4, 5]);
     for (const [k, hex] of Object.entries(HEAT)) {
       expect(colors.heat[k].toUpperCase(), `heat.${k}`).toBe(hex);
@@ -38,7 +38,7 @@ describe('colour tokens', () => {
     expect(colors.heat[0]).toBe(colors.viz.track);
     expect(colors.heat[5]).toBe(colors.viz.bar);
     const lum = (hex) => parseInt(hex.slice(1, 3), 16);
-    for (let i = 1; i <= 5; i += 1) expect(lum(HEAT[i])).toBeGreaterThan(lum(HEAT[i - 1]));
+    for (let i = 1; i <= 5; i += 1) expect(lum(HEAT[i])).toBeLessThan(lum(HEAT[i - 1]));
     for (const hex of Object.values(HEAT)) {
       expect(hex.slice(1, 3), `${hex} is grey`).toBe(hex.slice(3, 5));
       expect(hex.slice(3, 5)).toBe(hex.slice(5, 7));

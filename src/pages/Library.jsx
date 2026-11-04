@@ -574,6 +574,11 @@ export default function Library() {
                   invalidateLocalCache();
                   setFacetsKey((n) => n + 1);
                 }}
+                onAdDeleted={(gone) => {
+                  setRows((cur) => cur.filter((a) => a.id !== gone.id));
+                  invalidateLocalCache();
+                  setFacetsKey((n) => n + 1);
+                }}
               />
             ))}
           </div>
