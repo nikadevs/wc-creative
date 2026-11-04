@@ -21,7 +21,7 @@ export { default as EmptyState } from './EmptyState';
 export { default as Notice } from './Notice';
 export { default as Sheet } from './Sheet';
 export { default as Kbd } from './Kbd';
-export { GRID_CARDS, GRID_STATS, GRID_SPLIT, GRID_HALVES, STACK, SECTION_ANCHOR } from './layout';
+export { GRID_CARDS, GRID_CREATIVES, GRID_STATS, GRID_SPLIT, GRID_HALVES, STACK, SECTION_ANCHOR } from './layout';
 export { KpiGroup } from './Kpi';
 export { default as Delta, deltaSentence } from './Delta';
 export { default as StatusDot, STATUS_DOT_TONES } from './StatusDot';

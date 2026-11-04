@@ -25,7 +25,7 @@ import {
   Meta,
   Notice,
   EmptyState,
-  GRID_CARDS,
+  GRID_CREATIVES,
   selectCls,
   useMedia,
 } from '@/components/ui';
@@ -345,7 +345,7 @@ export default function Library() {
   };
 
   return (
-    <Page id="library">
+    <Page id="library" width="full">
       <PageHeader
         title={filters.starred ? 'Starred ads' : 'Ad library'}
         context={
@@ -511,7 +511,7 @@ export default function Library() {
       </p>
 
       {loading && !result ? (
-        <div className={GRID_CARDS} aria-busy="true">
+        <div className={GRID_CREATIVES} aria-busy="true">
           {Array.from({ length: 6 }, (_, i) => (
             <CardSkeleton key={i} />
           ))}
@@ -560,7 +560,7 @@ export default function Library() {
         />
       ) : (
         <>
-          <div className={`${GRID_CARDS} transition-opacity ${loading ? 'opacity-60' : ''}`} aria-busy={loading}>
+          <div className={`${GRID_CREATIVES} transition-opacity ${loading ? 'opacity-60' : ''}`} aria-busy={loading}>
             {rows.map((ad, i) => (
               <AdCard
                 key={ad.id}
