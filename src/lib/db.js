@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { readDbConfig } from './dbConfig.js';
 import { createDemoClient } from './demo/client.js';
+import { withLocalMedia } from './localMedia.js';
 
 // Client-side database access. Uses the ANON key (Row Level Security must be
 // ON for every table). Values come from .env (see .env.example).
@@ -16,12 +17,18 @@ export const DB_CONFIG = readDbConfig(env);
 export const DB_MODE = DB_CONFIG.mode; // 'live' | 'demo' | 'misconfigured'
 export const IS_DEMO = DB_MODE === 'demo';
 
-export const db =
-  DB_MODE === 'live'
-    ? createClient(DB_CONFIG.url, DB_CONFIG.anonKey, {
-        auth: { persistSession: true, autoRefreshToken: true },
-      })
-    : createDemoClient();
+// VITE_MEDIA_BASE set (even to an empty string, meaning this same site):
+// creatives live on our own server, see src/lib/localMedia.js.
+export const MEDIA_BASE = typeof env.VITE_MEDIA_BASE === 'string' ? env.VITE_MEDIA_BASE.trim().replace(/\/+$/, '') : null;
+
+const liveClient = () => {
+  const client = createClient(DB_CONFIG.url, DB_CONFIG.anonKey, {
+    auth: { persistSession: true, autoRefreshToken: true },
+  });
+  return MEDIA_BASE === null ? client : withLocalMedia(client, MEDIA_BASE);
+};
+
+export const db = DB_MODE === 'live' ? liveClient() : createDemoClient();
 
 // The API caps a single select at 1000 rows. We have thousands of ads, so a
 // plain `.select('*')` silently drops everything past the first 1000: the ad
