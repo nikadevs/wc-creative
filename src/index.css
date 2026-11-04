@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
   /* One container for every page, gutters included. */
   --maxw: 1220px;
   /* A phone on its side puts the notch on the left or right: the gutter grows
@@ -24,23 +24,23 @@
   --status-warn: #c18434;
   --status-bad: #c13140;
   --status-neutral: #8b8b8b;
-  --status-live: #f4f4f5;
-  --viz-bar: #d4d4d4;
-  --viz-bar-hi: #ffffff;
-  --viz-track: #262626;
-  --viz-grid: #262626;
-  --viz-axis: #8b8b8b;
-  --viz-surface: #161616;
+  --status-live: #171717;
+  --viz-bar: #525252;
+  --viz-bar-hi: #171717;
+  --viz-track: #e5e5e5;
+  --viz-grid: #e5e5e5;
+  --viz-axis: #6b6b6b;
+  --viz-surface: #ffffff;
   /* A change between two periods, and the heat ramp (tailwind delta, heat). */
-  --delta-good: #80e2b9;
-  --delta-bad: #ffadac;
+  --delta-good: #16774f;
+  --delta-bad: #a11f2d;
   --delta-flat: #8b8b8b;
-  --heat-0: #262626;
-  --heat-1: #4a4a4a;
-  --heat-2: #6a6a6a;
-  --heat-3: #8c8c8c;
-  --heat-4: #afafaf;
-  --heat-5: #d4d4d4;
+  --heat-0: #e5e5e5;
+  --heat-1: #c4c4c4;
+  --heat-2: #a3a3a3;
+  --heat-3: #838383;
+  --heat-4: #676767;
+  --heat-5: #525252;
 }
 @media (min-width: 1024px) {
   :root {
@@ -87,7 +87,7 @@ body,
 
 html {
   /* Near-black canvas so overscroll matches the page, no flashes on iOS. */
-  background: #0a0a0a;
+  background: #f5f5f5;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -107,8 +107,8 @@ body {
   margin: 0;
   /* Flat near-black canvas - no gradient; depth comes from the cards' own
      lit top edge and shadows, not a page wash. */
-  background: #0a0a0a;
-  color: #f4f4f5;
+  background: #f5f5f5;
+  color: #171717;
   font-family: Figtree, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -162,7 +162,7 @@ h3 {
 
 /* Text selection in a soft white wash, not the OS blue. */
 ::selection {
-  background: rgba(255, 255, 255, 0.22);
+  background: rgba(0, 0, 0, 0.12);
 }
 
 /* One consistent, quiet focus ring on every form control, so the whole app
@@ -172,8 +172,8 @@ input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
   outline: none;
-  border-color: #ffffff;
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.16);
+  border-color: #171717;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.12);
 }
 
 /* Everything else you can reach with the keyboard gets the same white ring,
@@ -183,7 +183,7 @@ button:focus-visible,
 summary:focus-visible,
 [role='button']:focus-visible,
 [tabindex='0']:focus-visible {
-  outline: 2px solid #ffffff;
+  outline: 2px solid #171717;
   outline-offset: 2px;
 }
 
@@ -288,13 +288,13 @@ summary:focus-visible,
 /* Thin, neutral scrollbars */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #333333 transparent;
+  scrollbar-color: #c4c4c4 transparent;
 }
 *::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 *::-webkit-scrollbar-thumb {
-  background: #333333;
+  background: #c4c4c4;
   border-radius: 999px;
 }

@@ -5,7 +5,7 @@ import React from 'react';
 export function Skeleton({ className = '' }) {
   return (
     <div
-      className={`rounded-md bg-white/[0.05] bg-[linear-gradient(100deg,transparent_30%,rgba(255,255,255,0.06)_50%,transparent_70%)] bg-[length:220%_100%] animate-shimmer ${className}`}
+      className={`rounded-md bg-white/[0.05] bg-[linear-gradient(100deg,transparent_30%,rgba(0,0,0,0.04)_50%,transparent_70%)] bg-[length:220%_100%] animate-shimmer ${className}`}
     />
   );
 }

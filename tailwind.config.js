@@ -1,5 +1,5 @@
 /** @type {import('tailwindcss').Config} */
-// Black and white, dark only. A near black canvas, slightly lighter cards that
+// Black and white, light theme (was dark only). A near black canvas, slightly lighter cards that
 // need no border to stand apart, light ink, one white accent, and small radii.
 // Figtree for reading, JetBrains Mono only for numbers, code and one eyebrow
 // per page. The whole app is driven by these tokens, so changing them here
@@ -22,9 +22,9 @@ const STATUS = {
   warn: '#C18434',
   bad: '#C13140',
   neutral: '#8B8B8B',
-  live: '#F4F4F5',
+  live: '#171717',
 };
-const STATUS_TEXT = { good: '#80E2B9', warn: '#F9BE79', bad: '#FFADAC' };
+const STATUS_TEXT = { good: '#16774F', warn: '#8F5A12', bad: '#A11F2D' };
 // A change between two periods. good and bad are the status text tints under a
 // name that says what they are for; flat is the neutral grey, for no change and
 // for a change that has no better direction (a rival running more ads).
@@ -32,7 +32,7 @@ const DELTA = { good: STATUS_TEXT.good, bad: STATUS_TEXT.bad, flat: STATUS.neutr
 // Heat cells: five steps of the neutral bar grey, ordinal only. 0 is the bare
 // track (no mark), 5 is the same grey as viz.bar. Checked with the dataviz
 // validator on the card and the canvas: the ramp passes the ordinal checks.
-const HEAT = { 0: '#262626', 1: '#4A4A4A', 2: '#6A6A6A', 3: '#8C8C8C', 4: '#AFAFAF', 5: '#D4D4D4' };
+const HEAT = { 0: '#E5E5E5', 1: '#C4C4C4', 2: '#A3A3A3', 3: '#838383', 4: '#676767', 5: '#525252' };
 
 export default {
   content: ['./index.html', './src/**/*.{js,jsx}'],
@@ -47,18 +47,23 @@ export default {
         // (see the text-black swaps). `dim` is the softer accent for links and
         // secondary emphasis; `wash` is a near black tint behind the accent on
         // dark cards (active nav rows, selected chips).
-        accent: { DEFAULT: '#FFFFFF', dim: '#D4D4D4', wash: '#1C1C1C' },
-        canvas: '#0A0A0A', // page background and in-card track fills (near black)
-        ink: { DEFAULT: '#F4F4F5', soft: '#8B8B8B' }, // light body / muted secondary
-        line: '#262626', // hairlines: inputs, dividers, never around every card
+        accent: { DEFAULT: '#171717', dim: '#404040', wash: '#EDEDED' },
+        canvas: '#F5F5F5', // page background and in-card track fills (near black)
+        ink: { DEFAULT: '#171717', soft: '#6B6B6B' }, // light body / muted secondary
+        line: '#E5E5E5', // hairlines: inputs, dividers, never around every card
         // Cards sit on the canvas without a border. `hi` is the same card under
         // the pointer or holding a pressed control.
-        card: { DEFAULT: '#161616', hi: '#1C1C1C' },
+        card: { DEFAULT: '#FFFFFF', hi: '#FAFAFA' },
+        // Light theme: the old white-on-dark utilities (bg-white for a primary
+        // button, white/10 for a hover wash, text-black on white) flip, so the
+        // same classes read correctly on a light page.
+        white: '#171717',
+        black: '#FFFFFF',
 
         // The status marks and their text tints (see the note at the top).
         status: { ...STATUS, 'good-text': STATUS_TEXT.good, 'warn-text': STATUS_TEXT.warn, 'bad-text': STATUS_TEXT.bad },
         // Magnitude: a bar, its track, and the hairline grid of a plot.
-        viz: { bar: '#D4D4D4', 'bar-hi': '#FFFFFF', track: '#262626', grid: '#262626' },
+        viz: { bar: '#525252', 'bar-hi': '#171717', track: '#E5E5E5', grid: '#E5E5E5' },
         // Arrow and number of a change (see Delta.jsx), and the heat ramp
         // (see HeatStrip.jsx). Both mirrored as css vars in index.css.
         delta: DELTA,
@@ -69,9 +74,9 @@ export default {
         // colour. 50 and 100 are dark tinted fills, 300 the text tint, 400 and
         // 500 the mark. mint is the good mark (a done tick, an on switch).
         mint: { DEFAULT: STATUS.good },
-        emerald: { 50: '#042016', 100: '#02291C', 300: STATUS_TEXT.good, 400: STATUS.good, 500: STATUS.good, 900: '#042016' },
-        red: { 50: '#2B1213', 100: '#361717', 300: STATUS_TEXT.bad, 400: STATUS.bad, 500: STATUS.bad },
-        amber: { 50: '#261704', 100: '#311D03', 300: STATUS_TEXT.warn, 400: STATUS.warn, 500: STATUS.warn },
+        emerald: { 50: '#E8F6EF', 100: '#D3EEE1', 300: STATUS_TEXT.good, 400: STATUS.good, 500: STATUS.good, 900: '#E8F6EF' },
+        red: { 50: '#FCECEE', 100: '#F8DADE', 300: STATUS_TEXT.bad, 400: STATUS.bad, 500: STATUS.bad },
+        amber: { 50: '#FDF3E3', 100: '#FAE7C9', 300: STATUS_TEXT.warn, 400: STATUS.warn, 500: STATUS.warn },
       },
       fontFamily: {
         // Both faces are self hosted through @fontsource (see src/main.jsx).
@@ -100,8 +105,8 @@ export default {
       boxShadow: {
         // Barely there. A card is lit on its top edge and nothing else; the
         // hover state adds one soft drop. Buttons carry no glow.
-        card: 'inset 0 1px 0 rgba(255,255,255,0.04)',
-        cardhover: 'inset 0 1px 0 rgba(255,255,255,0.04), 0 8px 24px rgba(0,0,0,0.45)',
+        card: '0 1px 2px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.05)',
+        cardhover: '0 1px 2px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.05), 0 8px 24px rgba(0,0,0,0.08)',
         cta: 'none',
       },
       // Small radii: 8px on controls and chips, 10px on cards and sheets.

@@ -24,7 +24,7 @@ function MostActive({ board, dated }) {
     <>
       {dated && shown.length > 0 && (
         <p className="text-small text-ink-soft -mt-1 mb-1">
-          Last 12 weeks. Brighter means more ads running, up to {max}.
+          Last 12 weeks. Darker means more ads running, up to {max}.
         </p>
       )}
       <ul className="divide-y divide-line">

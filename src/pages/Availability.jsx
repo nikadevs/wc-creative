@@ -22,7 +22,7 @@ const META = Object.fromEntries(STATUSES.map((s) => [s.key, s]));
 const HOUR_PX = 40;
 const GRID_H = 24 * HOUR_PX;
 // Hour lines drawn with a gradient (no per-line DOM nodes).
-const GRID_BG = `repeating-linear-gradient(to bottom, transparent, transparent ${HOUR_PX - 1}px, #262626 ${HOUR_PX - 1}px, #262626 ${HOUR_PX}px)`;
+const GRID_BG = `repeating-linear-gradient(to bottom, transparent, transparent ${HOUR_PX - 1}px, #E5E5E5 ${HOUR_PX - 1}px, #E5E5E5 ${HOUR_PX}px)`;
 
 const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
