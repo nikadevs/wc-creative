@@ -9,12 +9,13 @@
 
   var P = globalThis.SwipefileParse;
   var LABEL = 'Save to swipefile';
+  var DEFAULT_APP = 'https://creative.woodencrew.com';
   var NO_ADDRESS = 'Set your swipefile address first: open the extension options.';
 
   function readAppUrl(done) {
     try {
       chrome.storage.sync.get(['appUrl'], function (items) {
-        done((items && items.appUrl) || '');
+        done((items && items.appUrl) || DEFAULT_APP);
       });
     } catch (e) {
       done('');
