@@ -16,4 +16,7 @@ cp deploy/wc-media.service /etc/systemd/system/wc-media.service
 systemctl daemon-reload
 systemctl enable -q wc-media
 systemctl restart wc-media
+cp deploy/wc-autodeploy.service deploy/wc-autodeploy.timer /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable -q --now wc-autodeploy.timer
 echo DEPLOYED
