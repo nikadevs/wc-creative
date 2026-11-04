@@ -7,6 +7,7 @@ import {
   Images,
   Megaphone,
   NotePencil,
+  Package,
   PaperPlaneTilt,
   Quotes,
   SquaresFour,
@@ -24,6 +25,7 @@ import { MODULES, FEATURE_READY, isTeamMode } from './modules.js';
 export const NAV_ITEMS = {
   dashboard: { id: 'dashboard', to: '/', label: 'Dashboard', short: 'Home', icon: SquaresFour, module: 'library', end: true },
   ads: { id: 'ads', to: '/ads', label: 'Ads', short: 'Ads', icon: Images, module: 'library' },
+  products: { id: 'products', to: '/products', label: 'Products', short: 'Products', icon: Package, module: 'library' },
   insights: { id: 'insights', to: '/insights', label: 'Insights', short: 'Insights', icon: ChartBar, module: 'library' },
   hooks: { id: 'hooks', to: '/hooks', label: 'Hook bank', short: 'Hooks', icon: Quotes, module: 'hooks' },
   briefs: { id: 'briefs', to: '/briefs', label: 'Briefs', short: 'Briefs', icon: NotePencil, module: 'briefs' },
@@ -50,13 +52,13 @@ export const NAV_ITEMS = {
 // The two main areas (your insights, the competitors) come right after the
 // library, in the sidebar and on the phone tabs alike. Hooks and Posts live in
 // the More sheet on a phone.
-const SIDEBAR_SOLO = ['dashboard', 'ads', 'insights', 'competitors', 'hooks', 'briefs', 'intel', 'capture'];
-const SIDEBAR_TEAM = ['dashboard', 'ads', 'insights', 'competitors', 'hooks', 'briefs', 'posts', 'intel', 'outreach', 'availability', 'capture'];
+const SIDEBAR_SOLO = ['dashboard', 'ads', 'products', 'insights', 'competitors', 'hooks', 'briefs', 'intel', 'capture'];
+const SIDEBAR_TEAM = ['dashboard', 'ads', 'products', 'insights', 'competitors', 'hooks', 'briefs', 'posts', 'intel', 'outreach', 'availability', 'capture'];
 const TABS_SOLO = ['dashboard', 'ads', 'insights', 'competitors'];
 const TABS_TEAM = ['dashboard', 'ads', 'insights', 'competitors'];
 // Where a tab whose module is off gets its replacement from, in this order.
 const TAB_FILL = ['ads', 'insights', 'hooks', 'briefs', 'competitors', 'intel'];
-const MORE_TEAM = ['starred', 'posts', 'hooks', 'briefs', 'intel', 'outreach', 'availability', 'profile', 'capture'];
+const MORE_TEAM = ['starred', 'products', 'posts', 'hooks', 'briefs', 'intel', 'outreach', 'availability', 'profile', 'capture'];
 
 function context({ modules = MODULES, teamMode, ready = FEATURE_READY } = {}) {
   return { modules, teamMode: teamMode ?? isTeamMode(modules), ready };

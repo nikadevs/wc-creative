@@ -105,12 +105,70 @@ async function save(query, product) {
   return { ok: true, duplicate: !!body.duplicate, id: body.id, media: body.media || null, app: app };
 }
 
+// Calls the project's REST API as the signed in user (row level security).
+async function restCall(path, init) {
+  var token = await accessToken();
+  if (!token) return { ok: false, code: 'signed_out' };
+  var cfg = await config();
+  var opts = init || {};
+  var headers = Object.assign({ apikey: cfg.anonKey, Authorization: 'Bearer ' + token }, opts.headers || {});
+  var res = await fetch(cfg.url + '/rest/v1/' + path, { method: opts.method || 'GET', headers: headers, body: opts.body });
+  var text = await res.text();
+  var data = null;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch (e) {
+    data = null;
+  }
+  return { ok: res.ok, data: data };
+}
+
+async function products() {
+  var r = await restCall('products?select=name&order=sort.asc,name.asc');
+  if (!r.ok || !Array.isArray(r.data)) return { ok: false };
+  return { ok: true, names: r.data.map(function (p) { return p.name; }) };
+}
+
+var ID_OK = /^[0-9]{6,20}$/;
+function cleanIds(ids) {
+  return (Array.isArray(ids) ? ids : []).map(String).filter(function (id) {
+    return ID_OK.test(id);
+  });
+}
+
+// Which of these Library IDs the team has seen before.
+async function seenCheck(ids) {
+  var list = cleanIds(ids);
+  var seen = [];
+  for (var i = 0; i < list.length; i += 100) {
+    var part = list.slice(i, i + 100);
+    var r = await restCall('ad_views?select=library_id&library_id=in.(' + part.join(',') + ')');
+    if (!r.ok) return { ok: false, code: r.code || 'error', seen: seen };
+    for (var j = 0; j < (r.data || []).length; j++) seen.push(r.data[j].library_id);
+  }
+  return { ok: true, seen: seen };
+}
+
+async function seenMark(ids) {
+  var list = cleanIds(ids);
+  if (!list.length) return { ok: true };
+  var r = await restCall('ad_views', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Prefer: 'resolution=ignore-duplicates,return=minimal' },
+    body: JSON.stringify(list.map(function (id) { return { library_id: id }; })),
+  });
+  return { ok: r.ok };
+}
+
 chrome.runtime.onMessage.addListener(function (msg, sender, reply) {
   var run;
   if (msg && msg.type === 'save') run = save(String(msg.query || ''), String(msg.product || ''));
   else if (msg && msg.type === 'signIn') run = signIn(String(msg.email || ''), String(msg.password || '')).then(function (s) {
     return { ok: true, email: s.email };
   });
+  else if (msg && msg.type === 'products') run = products();
+  else if (msg && msg.type === 'seenCheck') run = seenCheck(msg.ids);
+  else if (msg && msg.type === 'seenMark') run = seenMark(msg.ids);
   else if (msg && msg.type === 'signOut') run = setLocal({ session: null }).then(function () {
     return { ok: true };
   });

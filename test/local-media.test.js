@@ -178,6 +178,8 @@ describe('save-capture', () => {
       const u = String(url);
       if (u === `${SB}/auth/v1/user`) return new Response(JSON.stringify({ id: UID, email: 'r@example.com' }), { status: 200 });
       if (u.includes('metrics->>ad_library_id=eq.1234567890')) return new Response('[]', { status: 200 });
+      if (u.includes('/rest/v1/products?select=name&name=eq.Neck%20Pillow')) return new Response(JSON.stringify([{ name: 'Neck Pillow' }]), { status: 200 });
+      if (u.endsWith('/rest/v1/ad_views')) return new Response('', { status: 201 });
       if (u.startsWith(`${SB}/rest/v1/ads?select=id`) && init.method === 'POST') {
         inserted = JSON.parse(init.body);
         return new Response(JSON.stringify([{ id: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee' }]), { status: 201 });
@@ -216,6 +218,7 @@ describe('save-capture', () => {
       const u = String(url);
       if (u === `${SB}/auth/v1/user`) return new Response(JSON.stringify({ id: UID }), { status: 200 });
       if (u.includes('metrics->>ad_library_id=eq.1234567890')) return new Response(JSON.stringify([{ id: 'old' }]), { status: 200 });
+      if (u.endsWith('/rest/v1/ad_views')) return new Response('', { status: 201 });
       throw new Error('should not be called: ' + u);
     };
     const res = await handle(

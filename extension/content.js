@@ -183,27 +183,172 @@
     }
   }
 
+  function fillOptions(sel) {
+    var keep = product;
+    while (sel.firstChild) sel.removeChild(sel.firstChild);
+    var none = document.createElement('option');
+    none.value = '';
+    none.textContent = 'No product';
+    sel.appendChild(none);
+    var names = PRODUCTS.slice();
+    if (keep && names.indexOf(keep) < 0) names.push(keep);
+    for (var i = 0; i < names.length; i++) {
+      var o = document.createElement('option');
+      o.value = names[i];
+      o.textContent = names[i];
+      sel.appendChild(o);
+    }
+    sel.value = keep;
+  }
+
   function productSelect() {
     var sel = document.createElement('select');
     sel.className = 'wc-product';
     sel.setAttribute('data-wc-product', '');
     sel.setAttribute('aria-label', 'Product');
-    var none = document.createElement('option');
-    none.value = '';
-    none.textContent = 'No product';
-    sel.appendChild(none);
-    for (var i = 0; i < PRODUCTS.length; i++) {
-      var o = document.createElement('option');
-      o.value = PRODUCTS[i];
-      o.textContent = PRODUCTS[i];
-      sel.appendChild(o);
-    }
-    sel.value = product;
+    fillOptions(sel);
     sel.addEventListener('change', onProduct);
     sel.addEventListener('click', function (e) {
       e.stopPropagation();
     });
     return sel;
+  }
+
+  // ---- seen ads: hidden for the whole team on the next visit ---------------
+  // An ad counts as seen once it has been at least half on screen for 1.5 s.
+  // Ads seen during this visit stay put; ads seen before are hidden (or
+  // dimmed, or shown: the switch at the bottom left).
+
+  var SEEN_DELAY = 1500;
+  var MODES = ['hide', 'dim', 'show'];
+  var MODE_LABEL = { hide: 'Seen ads: hidden', dim: 'Seen ads: dimmed', show: 'Seen ads: shown' };
+  var seenMode = 'hide';
+  var thisVisit = {};
+  var toCheck = [];
+  var toMark = [];
+  var hiddenCount = 0;
+  var checkTimer = null;
+  var markTimer = null;
+
+  function idOf(card) {
+    ID_RE.lastIndex = 0;
+    var m = ID_RE.exec(card.textContent || '');
+    return m ? m[1] : null;
+  }
+
+  function send(msg, done) {
+    try {
+      chrome.runtime.sendMessage(msg, function (res) {
+        if (chrome.runtime.lastError) return done && done(null);
+        if (done) done(res);
+      });
+    } catch (e) {
+      if (done) done(null);
+    }
+  }
+
+  var toggle = null;
+  function drawToggle() {
+    if (!toggle) {
+      toggle = document.createElement('button');
+      toggle.type = 'button';
+      toggle.className = 'wc-seen-toggle';
+      toggle.setAttribute('data-swipefile-btn', '');
+      toggle.addEventListener('click', function () {
+        var next = MODES[(MODES.indexOf(seenMode) + 1) % MODES.length];
+        setMode(next);
+        try {
+          chrome.storage.sync.set({ seenMode: next });
+        } catch (e) {
+          /* this page only */
+        }
+      });
+      document.body.appendChild(toggle);
+    }
+    toggle.textContent = MODE_LABEL[seenMode] + (hiddenCount ? ' (' + hiddenCount + ')' : '');
+  }
+
+  function setMode(mode) {
+    seenMode = MODES.indexOf(mode) >= 0 ? mode : 'hide';
+    document.documentElement.setAttribute('data-wc-seen-mode', seenMode);
+    drawToggle();
+  }
+
+  function flushCheck() {
+    checkTimer = null;
+    var cards = toCheck;
+    toCheck = [];
+    var byId = {};
+    var ids = [];
+    for (var i = 0; i < cards.length; i++) {
+      var id = idOf(cards[i]);
+      if (!id || thisVisit[id]) continue;
+      if (!byId[id]) {
+        byId[id] = [];
+        ids.push(id);
+      }
+      byId[id].push(cards[i]);
+    }
+    if (!ids.length) return;
+    send({ type: 'seenCheck', ids: ids }, function (res) {
+      if (!res || !res.ok) return;
+      for (var j = 0; j < res.seen.length; j++) {
+        var list = byId[res.seen[j]] || [];
+        for (var k = 0; k < list.length; k++) {
+          if (!list[k].hasAttribute('data-wc-seen')) {
+            list[k].setAttribute('data-wc-seen', '');
+            hiddenCount++;
+          }
+        }
+      }
+      drawToggle();
+    });
+  }
+
+  function flushMark() {
+    markTimer = null;
+    var ids = toMark;
+    toMark = [];
+    if (ids.length) send({ type: 'seenMark', ids: ids });
+  }
+
+  function markSeen(card) {
+    var id = idOf(card);
+    if (!id || thisVisit[id]) return;
+    thisVisit[id] = true;
+    toMark.push(id);
+    if (!markTimer) markTimer = setTimeout(flushMark, 2000);
+  }
+
+  var seenIo =
+    typeof IntersectionObserver === 'function'
+      ? new IntersectionObserver(
+          function (entries) {
+            for (var i = 0; i < entries.length; i++) {
+              var card = entries[i].target;
+              if (entries[i].isIntersecting) {
+                if (!card.wcSeenTimer) {
+                  card.wcSeenTimer = setTimeout(function (c) {
+                    return function () {
+                      c.wcSeenTimer = null;
+                      markSeen(c);
+                    };
+                  }(card), SEEN_DELAY);
+                }
+              } else if (card.wcSeenTimer) {
+                clearTimeout(card.wcSeenTimer);
+                card.wcSeenTimer = null;
+              }
+            }
+          },
+          { threshold: 0.5 }
+        )
+      : null;
+
+  function trackSeen(card) {
+    toCheck.push(card);
+    if (!checkTimer) checkTimer = setTimeout(flushCheck, 400);
+    if (seenIo) seenIo.observe(card);
   }
 
   function addButton(card) {
@@ -220,6 +365,7 @@
     wrap.appendChild(productSelect());
     wrap.appendChild(button);
     card.appendChild(wrap);
+    trackSeen(card);
   }
 
   // The card around an element that holds exactly one Library ID: climb while
@@ -272,15 +418,26 @@
   }).observe(document.body, { childList: true, subtree: true });
 
   try {
-    chrome.storage.sync.get(['product'], function (items) {
+    chrome.storage.sync.get(['product', 'seenMode'], function (items) {
       setAllSelects((items && items.product) || '');
+      setMode((items && items.seenMode) || 'hide');
     });
     chrome.storage.onChanged.addListener(function (changes, area) {
       if (area === 'sync' && changes.product) setAllSelects(changes.product.newValue || '');
+      if (area === 'sync' && changes.seenMode) setMode(changes.seenMode.newValue || 'hide');
     });
   } catch (err) {
     /* no storage: the choice lasts until reload */
   }
+
+  // Our product list, from the site.
+  send({ type: 'products' }, function (res) {
+    if (!res || !res.ok || !res.names || !res.names.length) return;
+    PRODUCTS = res.names;
+    var all = document.querySelectorAll('select[data-wc-product]');
+    for (var i = 0; i < all.length; i++) fillOptions(all[i]);
+  });
+  setMode(seenMode);
 
   // One full pass for what is already on the page.
   var first = P.findCards(document);

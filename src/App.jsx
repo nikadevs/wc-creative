@@ -24,6 +24,7 @@ const Competitors = lazy(() => import('@/pages/Competitors'));
 const CompetitorDetail = lazy(() => import('@/pages/CompetitorDetail'));
 const Insights = lazy(() => import('@/pages/Insights'));
 const HookBank = lazy(() => import('@/pages/HookBank'));
+const Products = lazy(() => import('@/pages/Products'));
 const Briefs = lazy(() => import('@/pages/Briefs'));
 const Intel = lazy(() => import('@/pages/Intel'));
 const Availability = lazy(() => import('@/pages/Availability'));
@@ -94,6 +95,7 @@ export default function App() {
         <Route path="overview" element={page(<Dashboard />)} />
         <Route path="ads" element={page(<Library />)} />
         <Route path="ads/import" element={page(<ImportPage />)} />
+        <Route path="products" element={page(<Products />)} />
         <Route path="compare" element={page(<Compare />)} />
         <Route path="ads/add" element={page(<AddAd />)} />
         <Route path="ad/:id" element={page(<AdDetail />)} />

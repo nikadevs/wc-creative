@@ -684,6 +684,48 @@ create policy competitors_team_all on public.competitors
   for all to authenticated using (true) with check (true);
 
 
+-- ============================ products ==============================
+-- Our own products. An ad is filed under one of them (metrics.wc_product,
+-- mirrored as a tag of the same name so the library tag filter finds it).
+-- sort orders the list everywhere: the library, the ad card, the extension.
+
+create table if not exists public.products (
+  id          uuid primary key default gen_random_uuid(),
+  name        text not null unique check (length(trim(name)) between 1 and 80),
+  sort        integer not null default 0,
+  created_at  timestamptz default now()
+);
+
+alter table public.products enable row level security;
+drop policy if exists products_team_all on public.products;
+create policy products_team_all on public.products
+  for all to authenticated using (true) with check (true);
+
+insert into public.products (name, sort) values
+  ('Neck Pillow', 1),
+  ('Air Cushion Back', 2),
+  ('Anti Theft Bag', 3),
+  ('GPS Wallet Tracker', 4)
+on conflict (name) do nothing;
+
+
+-- ============================ ad_views ==============================
+-- Ads the team has already seen in the Meta Ad Library, by Library ID, for
+-- everyone: the extension hides them on the next visit. One row per ad, the
+-- first time anyone saw it.
+
+create table if not exists public.ad_views (
+  library_id  text primary key check (library_id ~ '^[0-9]{6,20}$'),
+  seen_at     timestamptz not null default now(),
+  seen_by     uuid default auth.uid()
+);
+
+alter table public.ad_views enable row level security;
+drop policy if exists ad_views_team_all on public.ad_views;
+create policy ad_views_team_all on public.ad_views
+  for all to authenticated using (true) with check (true);
+
+
 -- ========================= kpi_snapshots ============================
 -- One row per day of the numbers that matter, so the dashboard can draw
 -- funnel + traffic + revenue trends the frontend can read directly.

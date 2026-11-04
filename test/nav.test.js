@@ -12,15 +12,15 @@ const shorts = (items) => items.map((i) => i.short);
 
 describe('sidebarItems', () => {
   it('solo: dashboard, ads, then the two main areas, no team pages', () => {
-    expect(labels(sidebarItems(SOLO))).toEqual(['Dashboard', 'Ads', 'Insights', 'Competitors', 'Hook bank', 'Briefs', 'Market intel']);
+    expect(labels(sidebarItems(SOLO))).toEqual(['Dashboard', 'Ads', 'Products', 'Insights', 'Competitors', 'Hook bank', 'Briefs', 'Market intel']);
   });
   it('all: the team list, insights and competitors after ads', () => {
     expect(labels(sidebarItems(ALL))).toEqual([
-      'Dashboard', 'Ads', 'Insights', 'Competitors', 'Hook bank', 'Briefs', 'Organic posts', 'Market intel', 'Outreach', 'Availability',
+      'Dashboard', 'Ads', 'Products', 'Insights', 'Competitors', 'Hook bank', 'Briefs', 'Organic posts', 'Market intel', 'Outreach', 'Availability',
     ]);
   });
   it('library,team: team mode with the solo modules skipped', () => {
-    expect(labels(sidebarItems(TEAM))).toEqual(['Dashboard', 'Ads', 'Insights', 'Organic posts', 'Outreach', 'Availability']);
+    expect(labels(sidebarItems(TEAM))).toEqual(['Dashboard', 'Ads', 'Products', 'Insights', 'Organic posts', 'Outreach', 'Availability']);
   });
   it('insights is a library page: on in every mode, links to /insights', () => {
     expect(NAV_ITEMS.insights).toMatchObject({ to: '/insights', label: 'Insights', short: 'Insights', module: 'library' });
@@ -36,7 +36,7 @@ describe('sidebarItems', () => {
   });
   it('ops alone is team mode without the team pages', () => {
     const ops = { modules: parseModules('ops'), ready: { capture: false } };
-    expect(labels(sidebarItems(ops))).toEqual(['Dashboard', 'Ads', 'Insights']);
+    expect(labels(sidebarItems(ops))).toEqual(['Dashboard', 'Ads', 'Products', 'Insights']);
   });
   it('dashboard is the only item with end', () => {
     expect(sidebarItems(ALL).filter((i) => i.end).map((i) => i.to)).toEqual(['/']);
@@ -82,19 +82,19 @@ describe('mobileTabs', () => {
 
 describe('moreItems', () => {
   it('solo: Starred ads, Hook bank, Briefs, Market intel, Profile', () => {
-    expect(labels(moreItems(SOLO))).toEqual(['Starred ads', 'Hook bank', 'Briefs', 'Market intel', 'Profile']);
+    expect(labels(moreItems(SOLO))).toEqual(['Starred ads', 'Products', 'Hook bank', 'Briefs', 'Market intel', 'Profile']);
   });
   it('solo with capture ready: Capture before Profile', () => {
-    expect(labels(moreItems(ready(SOLO)))).toEqual(['Starred ads', 'Hook bank', 'Briefs', 'Market intel', 'Capture', 'Profile']);
+    expect(labels(moreItems(ready(SOLO)))).toEqual(['Starred ads', 'Products', 'Hook bank', 'Briefs', 'Market intel', 'Capture', 'Profile']);
   });
   it('all: Organic posts and Hook bank lead after the shortlist', () => {
     expect(labels(moreItems(ALL))).toEqual([
-      'Starred ads', 'Organic posts', 'Hook bank', 'Briefs', 'Market intel', 'Outreach', 'Availability', 'Profile',
+      'Starred ads', 'Products', 'Organic posts', 'Hook bank', 'Briefs', 'Market intel', 'Outreach', 'Availability', 'Profile',
     ]);
     expect(labels(moreItems(ready(ALL))).at(-1)).toBe('Capture');
   });
   it('library,team: only what is on', () => {
-    expect(labels(moreItems(TEAM))).toEqual(['Starred ads', 'Organic posts', 'Outreach', 'Availability', 'Profile']);
+    expect(labels(moreItems(TEAM))).toEqual(['Starred ads', 'Products', 'Organic posts', 'Outreach', 'Availability', 'Profile']);
   });
   it('every sidebar page is reachable on a phone, as a tab or in More', () => {
     for (const opts of [SOLO, ALL, TEAM, ready(SOLO), ready(ALL)]) {

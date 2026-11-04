@@ -70,3 +70,27 @@
   font: 500 14px/1 system-ui, -apple-system, "Segoe UI", sans-serif;
   cursor: pointer;
 }
+
+/* Seen ads (data-wc-seen), by the mode on <html>. */
+html[data-wc-seen-mode='hide'] [data-wc-seen] {
+  display: none !important;
+}
+html[data-wc-seen-mode='dim'] [data-wc-seen] {
+  opacity: 0.35;
+}
+.wc-seen-toggle {
+  all: revert;
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  z-index: 2147483000;
+  min-height: 40px;
+  padding: 0 14px;
+  background: #171717;
+  color: #FFFFFF;
+  border: 0;
+  border-radius: 999px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  font: 600 13px/1 system-ui, -apple-system, "Segoe UI", sans-serif;
+  cursor: pointer;
+}
