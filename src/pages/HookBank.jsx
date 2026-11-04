@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowSquareOut, Check, Copy, X } from '@phosphor-icons/react';
+import { ArrowSquareOut, Check, Copy, X, Trash } from '@phosphor-icons/react';
 import { fetchAll } from '@/lib/db';
+import { hideHooks, isHookHidden } from '@/lib/library/hideHooks';
 import { copyText } from '@/lib/copyText';
 import PartialNotice from '@/components/PartialNotice';
 import { isOwnBrand } from '@/lib/brand';
@@ -44,6 +45,7 @@ const ONLY = [
 ];
 
 const isOurs = (a) => isOwnBrand(a.brand);
+
 // A hook is proven when a human marked the ad a winner, or the brand kept
 // paying to run it for 30+ days (the auto-verdict threshold).
 const isProven = (a) => a.verdict === 'winner' || (a.metrics?.days_running ?? 0) >= 30;
@@ -75,6 +77,9 @@ export default function HookBank() {
   const [tag, setTag] = useState(null);
   const [angle, setAngle] = useState('all'); // 'all' | 'none' | angle id
   const [picked, setPicked] = useState(() => new Set()); // hook keys
+  const [armed, setArmed] = useState(false); // delete needs a second tap
+  const [hiding, setHiding] = useState(false);
+  const [hideError, setHideError] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false);
   // Under 1280 the toolbar has little room (one row from 1024, a sideways
   // scrolling row on a phone that would push Filters off screen), so the
@@ -93,7 +98,7 @@ export default function HookBank() {
     fetchAll((q) => q.order('created_at', { ascending: false }), 'ads').then((data) => {
       if (!mounted) return;
       setPartial(data.error ? data : null);
-      setAds(data.filter((a) => hookText(a)));
+      setAds(data.filter((a) => hookText(a) && !isHookHidden(a)));
       setLoading(false);
     });
     return () => {
@@ -348,10 +353,36 @@ export default function HookBank() {
                     <span className="max-[359px]:sr-only">selected</span>
                   </p>
                   <BriefFromSelection hooks={briefHooks} adIds={briefAdIds} label={wide ? 'Brief from these hooks' : 'Brief from these'} className="ml-auto" />
+                  <Button
+                    onClick={async () => {
+                      if (!armed) {
+                        setArmed(true);
+                        setTimeout(() => setArmed(false), 3000);
+                        return;
+                      }
+                      setArmed(false);
+                      setHiding(true);
+                      setHideError('');
+                      const list = selectedHooks.flatMap((h) => h.ads);
+                      const res = await hideHooks(list);
+                      setHiding(false);
+                      if (!res.ok) setHideError(`Could not delete ${res.failed} of ${list.length}.`);
+                      const gone = new Set(list.map((a) => a.id));
+                      setAds((cur) => cur.filter((a) => !gone.has(a.id)));
+                      setPicked(new Set());
+                    }}
+                    disabled={hiding}
+                    aria-label={armed ? 'Tap again to delete the selected hooks' : 'Delete the selected hooks'}
+                    icon={Trash}
+                    className={armed ? '!bg-status-bad !text-[#fff]' : ''}
+                  >
+                    <span className="hidden sm:inline">{armed ? 'Delete?' : 'Delete'}</span>
+                  </Button>
                   <Button onClick={() => setPicked(new Set())} aria-label="Clear selection" icon={X} className="max-sm:px-0 max-sm:w-11">
                     <span className="hidden sm:inline">Clear</span>
                   </Button>
                 </div>
+                {hideError && <p className="px-2 pt-1 text-small text-status-bad-text">{hideError}</p>}
                 {capped && (
                   <p aria-live="polite" className="px-2 pt-1 pb-1 text-small text-ink-soft">
                     A brief takes the first {MAX_BRIEF_HOOKS} hooks and {MAX_BRIEF_ADS} ads.

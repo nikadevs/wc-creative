@@ -29,3 +29,33 @@ describe('hookAngle and angleCounts', () => {
     expect(angleCounts([], ANGLE_IDS)).toEqual({ none: 0, angles: [] });
   });
 });
+
+describe('hideHooks', () => {
+  it('marks each ad hook_hidden and keeps its other metrics', async () => {
+    const { hideHooks, isHookHidden } = await import('../../src/lib/library/hideHooks.js');
+    const updates = [];
+    const client = {
+      from: () => ({
+        update: (patch) => {
+          const q = {
+            select: () => q,
+            eq: (col, id) => {
+              updates.push({ id, patch });
+              return Promise.resolve({ error: null });
+            },
+            in: (col, ids) => {
+              updates.push({ id: ids[0], patch });
+              return Promise.resolve({ error: null });
+            },
+          };
+          return q;
+        },
+      }),
+    };
+    const res = await hideHooks([{ id: 'a1', metrics: { live: true } }], { client });
+    expect(res.ok).toBe(true);
+    expect(updates[0].patch.metrics).toEqual({ live: true, hook_hidden: true });
+    expect(isHookHidden({ metrics: { hook_hidden: true } })).toBe(true);
+    expect(isHookHidden({ metrics: {} })).toBe(false);
+  });
+});
