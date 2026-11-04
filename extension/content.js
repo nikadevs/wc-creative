@@ -16,6 +16,10 @@
 
   var P = globalThis.SwipefileParse;
   var LABEL = 'Add to Creative WC';
+  // Our products. The choice is shared: change it on one card and every card,
+  // in every Ad Library tab, follows (chrome.storage.sync).
+  var PRODUCTS = ['Neck Pillow', 'Air Cushion Back', 'Anti Theft Bag', 'GPS Wallet Tracker'];
+  var product = '';
   var TEXT = { saving: 'Saving...', saved: 'Saved', dup: 'Already saved', signin: 'Sign in to save', failed: 'Not saved, retry' };
   var DEFAULT_APP = 'https://creative.woodencrew.com';
     var ID_RE = /Library ID:?\s*(\d{6,20})/g;
@@ -112,17 +116,26 @@
       chrome.runtime.sendMessage({ type: 'openOptions' });
       return;
     }
-    var card = button.parentNode;
+    var wrap = button.parentNode;
+    var card = wrap.parentNode;
     // The parser reads the video address: put back any we unloaded.
     var vids = card.querySelectorAll('video');
     for (var i = 0; i < vids.length; i++) reload(vids[i]);
     readAppUrl(function (appUrl) {
-      var capture = P.parseCard(P.readCard(card));
+      // Read the card without our own controls in it.
+      var next = wrap.nextSibling;
+      card.removeChild(wrap);
+      var capture;
+      try {
+        capture = P.parseCard(P.readCard(card));
+      } finally {
+        card.insertBefore(wrap, next);
+      }
       var url = P.captureUrl(appUrl, capture, 'extension');
       var q = url.indexOf('?');
       setState(button, TEXT.saving, 'saving');
       try {
-        chrome.runtime.sendMessage({ type: 'save', query: q < 0 ? '' : url.slice(q + 1) }, function (res) {
+        chrome.runtime.sendMessage({ type: 'save', query: q < 0 ? '' : url.slice(q + 1), product: product }, function (res) {
           if (chrome.runtime.lastError || !res) {
             setState(button, TEXT.failed, 'failed');
             button.title = (chrome.runtime.lastError && chrome.runtime.lastError.message) || 'No answer';
@@ -154,16 +167,59 @@
     return false;
   }
 
+  function setAllSelects(value) {
+    product = value || '';
+    var all = document.querySelectorAll('select[data-wc-product]');
+    for (var i = 0; i < all.length; i++) if (all[i].value !== product) all[i].value = product;
+  }
+
+  function onProduct(e) {
+    e.stopPropagation();
+    setAllSelects(e.target.value);
+    try {
+      chrome.storage.sync.set({ product: product });
+    } catch (err) {
+      /* the page still follows */
+    }
+  }
+
+  function productSelect() {
+    var sel = document.createElement('select');
+    sel.className = 'wc-product';
+    sel.setAttribute('data-wc-product', '');
+    sel.setAttribute('aria-label', 'Product');
+    var none = document.createElement('option');
+    none.value = '';
+    none.textContent = 'No product';
+    sel.appendChild(none);
+    for (var i = 0; i < PRODUCTS.length; i++) {
+      var o = document.createElement('option');
+      o.value = PRODUCTS[i];
+      o.textContent = PRODUCTS[i];
+      sel.appendChild(o);
+    }
+    sel.value = product;
+    sel.addEventListener('change', onProduct);
+    sel.addEventListener('click', function (e) {
+      e.stopPropagation();
+    });
+    return sel;
+  }
+
   function addButton(card) {
     if (!card || hasButton(card)) return;
+    // Under the ad, on the right: the product, then the button.
+    var wrap = document.createElement('div');
+    wrap.className = 'wc-actions';
+    wrap.setAttribute('data-swipefile-btn', '');
     var button = document.createElement('button');
     button.type = 'button';
     button.className = 'swipefile-save';
-    button.setAttribute('data-swipefile-btn', '');
     button.textContent = LABEL;
     button.addEventListener('click', onClick);
-    // Under the ad, on the right.
-    card.appendChild(button);
+    wrap.appendChild(productSelect());
+    wrap.appendChild(button);
+    card.appendChild(wrap);
   }
 
   // The card around an element that holds exactly one Library ID: climb while
@@ -214,6 +270,17 @@
     }
     if (pending.length && !timer) timer = setTimeout(flush, 300);
   }).observe(document.body, { childList: true, subtree: true });
+
+  try {
+    chrome.storage.sync.get(['product'], function (items) {
+      setAllSelects((items && items.product) || '');
+    });
+    chrome.storage.onChanged.addListener(function (changes, area) {
+      if (area === 'sync' && changes.product) setAllSelects(changes.product.newValue || '');
+    });
+  } catch (err) {
+    /* no storage: the choice lasts until reload */
+  }
 
   // One full pass for what is already on the page.
   var first = P.findCards(document);

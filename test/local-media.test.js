@@ -192,7 +192,7 @@ describe('save-capture', () => {
         new Request('http://localhost/api/media/save-capture', {
           method: 'POST',
           headers: { Authorization: 'Bearer t', 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query }),
+          body: JSON.stringify({ query, product: 'Neck Pillow' }),
         }),
         { dir, env, fetch: fetchFn }
       );
@@ -204,6 +204,8 @@ describe('save-capture', () => {
       expect(inserted.format).toBe('video');
       expect(inserted.added_by).toBe(UID);
       expect(inserted.metrics.ad_library_id).toBe('1234567890');
+      expect(inserted.metrics.wc_product).toBe('Neck Pillow');
+      expect(inserted.tags).toContain('Neck Pillow');
     } finally {
       await rm(dir, { recursive: true, force: true });
     }

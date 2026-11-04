@@ -190,9 +190,14 @@ export async function handle(req, deps) {
 const clean = (v) => (typeof v === 'string' && v.trim() ? v.trim() : null);
 
 // The row saveAd writes for a capture saved with the default form.
-export function rowFromCapture(capture, user, now = new Date()) {
+// The products a saved ad can be filed under (the extension's choice).
+export const PRODUCTS = ['Neck Pillow', 'Air Cushion Back', 'Anti Theft Bag', 'GPS Wallet Tracker'];
+
+export function rowFromCapture(capture, user, now = new Date(), product = '') {
   const f = adFromCapture(capture, formFromCapture(capture), { now });
   const tags = Array.isArray(f.tags) ? f.tags : String(f.tags || '').split(',').map((t) => t.trim()).filter(Boolean);
+  const wcProduct = PRODUCTS.includes(product) ? product : null;
+  if (wcProduct && !tags.includes(wcProduct)) tags.push(wcProduct);
   return {
     brand: clean(f.brand),
     platform: clean(f.platform) || 'Facebook',
@@ -203,7 +208,7 @@ export function rowFromCapture(capture, user, now = new Date()) {
     verdict: f.verdict || 'unsure',
     status: f.status || 'running',
     tags,
-    metrics: f.metrics || {},
+    metrics: wcProduct ? { ...(f.metrics || {}), wc_product: wcProduct } : f.metrics || {},
     media_path: null,
     added_by: user.id,
     added_by_email: user.email || null,
@@ -230,7 +235,7 @@ async function saveCapture(req, { dir, env, realFetch }) {
   if (!found.ok) return fail(502, 'upstream', 'Could not check for a duplicate.');
   if (Array.isArray(found.data) && found.data[0]) return json(200, { ok: true, duplicate: true, id: found.data[0].id });
 
-  const row = rowFromCapture(capture, who.user);
+  const row = rowFromCapture(capture, who.user, new Date(), String(parsed.body.product || ''));
   const made = await rest({ fetch: realFetch, env, token, path: '/rest/v1/ads?select=id', method: 'POST', body: row, prefer: 'return=representation' });
   const ad = Array.isArray(made.data) ? made.data[0] : null;
   if (!made.ok || !ad) return fail(502, 'upstream', 'Could not save the ad.');

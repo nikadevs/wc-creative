@@ -83,14 +83,14 @@ async function accessToken() {
   }
 }
 
-async function save(query) {
+async function save(query, product) {
   var token = await accessToken();
   if (!token) return { ok: false, code: 'signed_out', message: 'Sign in to the extension first.' };
   var app = await appUrl();
   var res = await fetch(app + '/api/media/save-capture', {
     method: 'POST',
     headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ query: query }),
+    body: JSON.stringify({ query: query, product: product || '' }),
   });
   var body = await res.json().catch(function () {
     return {};
@@ -107,7 +107,7 @@ async function save(query) {
 
 chrome.runtime.onMessage.addListener(function (msg, sender, reply) {
   var run;
-  if (msg && msg.type === 'save') run = save(String(msg.query || ''));
+  if (msg && msg.type === 'save') run = save(String(msg.query || ''), String(msg.product || ''));
   else if (msg && msg.type === 'signIn') run = signIn(String(msg.email || ''), String(msg.password || '')).then(function (s) {
     return { ok: true, email: s.email };
   });
